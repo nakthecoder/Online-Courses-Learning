@@ -1,0 +1,297 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyP7Kl5Fq88kCibPLQ/IY7xV",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/nakthecoder/Online-Courses-Learning/blob/master/hw\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 1,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "gCm9tWt-_JD8",
+        "outputId": "7d50b42a-078f-436b-b9d2-80319ba7db56"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Predicted price for a 2000 sq ft house in Downtown: $342,733.81\n",
+            "\n",
+            "Model Coefficients:\n",
+            "location_Downtown: 42653.88\n",
+            "location_Rural: -96099.12\n",
+            "location_Suburb: 53445.24\n",
+            "square_footage: 170.50\n"
+          ]
+        }
+      ],
+      "source": [
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.linear_model import LinearRegression\n",
+        "from sklearn.preprocessing import OneHotEncoder\n",
+        "from sklearn.compose import ColumnTransformer\n",
+        "from sklearn.pipeline import Pipeline\n",
+        "# Generate sample data\n",
+        "data = {\n",
+        "'square_footage': [1500, 2000, 1800, 2500, 2200, 1700, 3000, 1900, 2100, 2600],\n",
+        "'location': ['Downtown', 'Suburb', 'Downtown', 'Rural', 'Suburb', 'Downtown',\n",
+        "'Rural', 'Suburb', 'Downtown', 'Rural'],\n",
+        "'price': [300000, 350000, 320000, 280000, 360000, 310000, 400000, 340000,\n",
+        "330000, 290000]\n",
+        "}\n",
+        "df = pd.DataFrame(data)\n",
+        "# Features and target\n",
+        "X = df[['square_footage', 'location']]\n",
+        "y = df['price']\n",
+        "# Preprocessing: One-hot encode the location column\n",
+        "preprocessor = ColumnTransformer(\n",
+        "transformers=[\n",
+        "('location', OneHotEncoder(sparse_output=False), ['location'])\n",
+        "], remainder='passthrough')\n",
+        "# Create pipeline with preprocessing and model\n",
+        "model = Pipeline(steps=[\n",
+        "('preprocessor', preprocessor),\n",
+        "('regressor', LinearRegression())\n",
+        "])\n",
+        "# Split data\n",
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,\n",
+        "random_state=62)\n",
+        "# Train model\n",
+        "model.fit(X_train, y_train)\n",
+        "# Make prediction for a new house: 2000 sq ft in Downtown\n",
+        "new_house = pd.DataFrame({'square_footage': [2000], 'location': ['Downtown']})\n",
+        "predicted_price = model.predict(new_house)\n",
+        "print(f\"Predicted price for a 2000 sq ft house in Downtown: ${predicted_price[0]:,.2f}\")\n",
+        "# Display model coefficients\n",
+        "feature_names = (model.named_steps['preprocessor']\n",
+        ".named_transformers_['location']\n",
+        ".get_feature_names_out(['location'])).tolist() + \\\n",
+        "['square_footage']\n",
+        "coefficients = model.named_steps['regressor'].coef_\n",
+        "print(\"\\nModel Coefficients:\")\n",
+        "for feature, coef in zip(feature_names, coefficients):\n",
+        "    print(f\"{feature}: {coef:.2f}\")"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "from sklearn.linear_model import LogisticRegression\n",
+        "from sklearn.preprocessing import StandardScaler, OneHotEncoder\n",
+        "from sklearn.compose import ColumnTransformer\n",
+        "from sklearn.pipeline import Pipeline\n",
+        "# Generate sample customer data\n",
+        "data = {\n",
+        "'age': [28, 44, 55, 58, 52, 56, 45, 59, 45, 53],\n",
+        "'monthly_usage_hours': [50, 50, 20, 55, 60, 30, 55, 52, 55, 40],\n",
+        "'purchase_amount': [500, 250, 150, 800, 300, 200, 175, 90, 280, 220],\n",
+        "'customer_service_calls': [5, 2, 8, 6, 5, 3, 7, 4, 4, 2],\n",
+        "'region': ['North', 'South', 'West', 'East', 'South', 'North', 'West', 'East',\n",
+        "'South', 'North'],\n",
+        "'churn': [1, 0, 1, 1, 1, 0, 1, 1, 1, 1] # 1 = churned, 0 = not churned\n",
+        "}\n",
+        "df = pd.DataFrame(data)\n",
+        "# Features and target\n",
+        "X = df[['age', 'monthly_usage_hours', 'purchase_amount', 'customer_service_calls',\n",
+        "'region']]\n",
+        "y = df['churn']\n",
+        "# Preprocessing: Scale numerical features and one-hot encode categorical features\n",
+        "preprocessor = ColumnTransformer(\n",
+        "transformers=[\n",
+        "('num', StandardScaler(), ['age', 'monthly_usage_hours', 'purchase_amount',\n",
+        "'customer_service_calls']),\n",
+        "('cat', OneHotEncoder(sparse_output=False), ['region'])\n",
+        "])\n",
+        "# Create pipeline with preprocessing and model\n",
+        "model = Pipeline(steps=[\n",
+        "('preprocessor', preprocessor),\n",
+        "('classifier', LogisticRegression(random_state=42))\n",
+        "])\n",
+        "# Split data\n",
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,\n",
+        "random_state=42)\n",
+        "# Train model\n",
+        "model.fit(X_train, y_train)\n",
+        "# Predict churn probability for a new customer\n",
+        "new_customer = pd.DataFrame({\n",
+        "'age': [40],\n",
+        "'monthly_usage_hours': [200],\n",
+        "'purchase_amount': [800],\n",
+        "'customer_service_calls': [20],\n",
+        "'region': ['West']\n",
+        "})\n",
+        "churn_probability = model.predict_proba(new_customer)[0][1] # Probability of churn (class 1)\n",
+        "# Classify based on threshold (0.5)\n",
+        "threshold = 0.5\n",
+        "churn_prediction = 1 if churn_probability > threshold else 0\n",
+        "print(f\"Churn Probability for new customer: {churn_probability:.2f}\")\n",
+        "print(f\"Churn Prediction (1 = churn, 0 = no churn): {churn_prediction}\")\n",
+        "# Display model coefficients\n",
+        "feature_names = (model.named_steps['preprocessor']\n",
+        ".named_transformers_['cat']\n",
+        ".get_feature_names_out(['region'])).tolist() + ['age',\n",
+        "'monthly_usage_hours', 'purchase_amount', 'customer_service_calls']\n",
+        "coefficients = model.named_steps['classifier'].coef_[0]\n",
+        "print(\"\\nModel Coefficients:\")\n",
+        "for feature, coef in zip(feature_names, coefficients):\n",
+        "    print(f\"{feature}: {coef:.2f}\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "O5ZXVvtDEXzN",
+        "outputId": "3c9ceb5d-d075-4036-b498-cbc48e7980e3"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Churn Probability for new customer: 1.00\n",
+            "Churn Prediction (1 = churn, 0 = no churn): 1\n",
+            "\n",
+            "Model Coefficients:\n",
+            "region_East: -0.26\n",
+            "region_North: 0.58\n",
+            "region_South: 0.13\n",
+            "region_West: 0.46\n",
+            "age: 0.13\n",
+            "monthly_usage_hours: -0.33\n",
+            "purchase_amount: 0.05\n",
+            "customer_service_calls: 0.15\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import pandas as pd\n",
+        "from sklearn.linear_model import LinearRegression\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "# Load dataset\n",
+        "df = pd.read_csv('sales_data.csv')  # Ensure columns: 'month', 'sales'\n",
+        "X = df[['month']]\n",
+        "y = df['sales']\n",
+        "\n",
+        "# Train the model\n",
+        "model = LinearRegression()\n",
+        "model.fit(X, y)\n",
+        "\n",
+        "# Predict for next 4 months\n",
+        "future_months = pd.DataFrame({'month': range(max(df['month'])+1, max(df['month'])+5)})\n",
+        "predictions = model.predict(future_months)\n",
+        "\n",
+        "# Plot results\n",
+        "plt.plot(df['month'], y, label='Historical Sales')\n",
+        "plt.plot(future_months['month'], predictions, label='Predicted Sales', linestyle='--')\n",
+        "plt.xlabel('Month')\n",
+        "plt.ylabel('Sales')\n",
+        "plt.legend()\n",
+        "plt.show()"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 356
+        },
+        "id": "KpfSmWLKsD-t",
+        "outputId": "282996fc-b555-4f16-dfdd-6557c075d10f"
+      },
+      "execution_count": 5,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "FileNotFoundError",
+          "evalue": "[Errno 2] No such file or directory: 'sales_data.csv'",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mFileNotFoundError\u001b[0m                         Traceback (most recent call last)",
+            "\u001b[0;32m/tmp/ipython-input-3199729317.py\u001b[0m in \u001b[0;36m<cell line: 0>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;31m# Load dataset\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 6\u001b[0;31m \u001b[0mdf\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mpd\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mread_csv\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m'sales_data.csv'\u001b[0m\u001b[0;34m)\u001b[0m  \u001b[0;31m# Ensure columns: 'month', 'sales'\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      7\u001b[0m \u001b[0mX\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdf\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'month'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      8\u001b[0m \u001b[0my\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdf\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m'sales'\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.12/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36mread_csv\u001b[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, date_format, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, encoding_errors, dialect, on_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options, dtype_backend)\u001b[0m\n\u001b[1;32m   1024\u001b[0m     \u001b[0mkwds\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mupdate\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkwds_defaults\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1025\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1026\u001b[0;31m     \u001b[0;32mreturn\u001b[0m \u001b[0m_read\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1027\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1028\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.12/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_read\u001b[0;34m(filepath_or_buffer, kwds)\u001b[0m\n\u001b[1;32m    618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    619\u001b[0m     \u001b[0;31m# Create the parser.\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 620\u001b[0;31m     \u001b[0mparser\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mTextFileReader\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfilepath_or_buffer\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m**\u001b[0m\u001b[0mkwds\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    622\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mchunksize\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0miterator\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.12/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m__init__\u001b[0;34m(self, f, engine, **kwds)\u001b[0m\n\u001b[1;32m   1618\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1619\u001b[0m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mhandles\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mIOHandles\u001b[0m \u001b[0;34m|\u001b[0m \u001b[0;32mNone\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1620\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_engine\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_make_engine\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mengine\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1621\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1622\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0mclose\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m->\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.12/dist-packages/pandas/io/parsers/readers.py\u001b[0m in \u001b[0;36m_make_engine\u001b[0;34m(self, f, engine)\u001b[0m\n\u001b[1;32m   1878\u001b[0m                 \u001b[0;32mif\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1879\u001b[0m                     \u001b[0mmode\u001b[0m \u001b[0;34m+=\u001b[0m \u001b[0;34m\"b\"\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1880\u001b[0;31m             self.handles = get_handle(\n\u001b[0m\u001b[1;32m   1881\u001b[0m                 \u001b[0mf\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1882\u001b[0m                 \u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.12/dist-packages/pandas/io/common.py\u001b[0m in \u001b[0;36mget_handle\u001b[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)\u001b[0m\n\u001b[1;32m    871\u001b[0m         \u001b[0;32mif\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mencoding\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0;34m\"b\"\u001b[0m \u001b[0;32mnot\u001b[0m \u001b[0;32min\u001b[0m \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    872\u001b[0m             \u001b[0;31m# Encoding\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 873\u001b[0;31m             handle = open(\n\u001b[0m\u001b[1;32m    874\u001b[0m                 \u001b[0mhandle\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    875\u001b[0m                 \u001b[0mioargs\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmode\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mFileNotFoundError\u001b[0m: [Errno 2] No such file or directory: 'sales_data.csv'"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import drive\n",
+        "drive.mount('/content/drive')"
+      ],
+      "metadata": {
+        "id": "bkhUnI5KwAbk"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "239f0e58",
+        "outputId": "58f089b9-4810-4360-a024-91f24f995c5f"
+      },
+      "source": [
+        "import pandas as pd\n",
+        "# Create a dummy sales data file\n",
+        "data = {'month': range(1, 13),\n",
+        "        'sales': [100, 120, 150, 130, 160, 180, 200, 220, 210, 190, 170, 140]}\n",
+        "dummy_df = pd.DataFrame(data)\n",
+        "dummy_df.to_csv('sales_data.csv', index=False)\n",
+        "print(\"Dummy 'sales_data.csv' created.\")"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Dummy 'sales_data.csv' created.\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
